@@ -5,12 +5,10 @@ from tkinter.messagebox import showinfo, showerror
 from tkinter import filedialog as fd
 
 
-class InputWindow(tk.Toplevel):
+class InputWindow(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
-        self.title("Input Integers")
-        self.geometry("300x150")
-        
+
         self.label1 = tk.Label(self, text="Enter first integer:")
         self.label1.pack(pady=5)
         self.entry1 = tk.Entry(self)
@@ -78,13 +76,45 @@ class App(tk.Tk):
         self.geometry(f'{width}x{height}+{int(screen_width/2 - width/2)}+{int(screen_height/2 - height/2)}')
 
         self.upload_button = UploadButton(self)
-        self.upload_button.pack()
+        self.upload_button.grid(row=0, column=0, columnspan=2)
 
         self.image_label = ttk.Label(self, padding=5)
-        self.image_label.pack()
+        self.image_label.grid(row=4, column=0)
 
     def get_tiled_image(self, filepath):
-        self.input_box = InputWindow(self)
+        self.filepath = filepath
+
+        self.label_rows = tk.Label(self, text='Enter the number of rows:')
+        self.label_rows.grid(row=1, column=0)
+
+        self.label_column = tk.Label(self, text='Enter the number of columns:')
+        self.label_column.grid(row=1, column=1)
+
+        self.input_row = tk.Entry(self)
+        self.input_row.grid(row=2, column=0)
+
+        self.input_column = tk.Entry(self)
+        self.input_column.grid(row=2, column=1)
+
+        self.submit_button = tk.Button(self, text='Submit', command=self.validate_inputs)
+        self.submit_button.grid(row=3, column=0, columnspan=2)
+
+    
+    def validate_inputs(self):
+        try:
+            rows = int(self.input_row.get())
+            columns = int(self.input_column.get())
+
+            if rows <= 0 or columns <= 0:
+                raise ValueError
+            
+            else:
+                showinfo('Success', f'Size of the tiles: {rows}x{columns}')
+                self.display_image(filepath=self.filepath)
+
+        except ValueError:
+            showerror('Error', 'Please enter valid inputs')
+
 
     def display_image(self, filepath):
         self.image = ImageTk.PhotoImage(Image.open(filepath))
