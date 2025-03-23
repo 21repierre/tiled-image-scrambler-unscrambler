@@ -1,56 +1,45 @@
 import tkinter as tk
-import tkinter.ttk as ttk
+import customtkinter as ctk
 from PIL import Image, ImageTk
-from tkinter.messagebox import showinfo, showerror
+from widgets.top_menu import TopMenu
 from tkinter import filedialog as fd
 
 
-class InputWindow(tk.Frame):
-    def __init__(self, master):
-        super().__init__(master)
+class App(ctk.CTk):
+    """
+    The class containing the main app.
+    """
+    def __init__(self):
+        super().__init__()
 
-        self.label1 = tk.Label(self, text="Enter first integer:")
-        self.label1.pack(pady=5)
-        self.entry1 = tk.Entry(self)
-        self.entry1.pack(pady=5)
-        
-        self.label2 = tk.Label(self, text="Enter second integer:")
-        self.label2.pack(pady=5)
-        self.entry2 = tk.Entry(self)
-        self.entry2.pack(pady=5)
-        
-        self.submit_button = tk.Button(self, text="Submit", command=self.validate_input)
-        self.submit_button.pack(pady=10)
-        
-    def validate_input(self):
-        try:
-            first_int = int(self.entry1.get())
-            second_int = int(self.entry2.get())
-            showinfo("Success", f"First integer: {first_int}\nSecond integer: {second_int}")
-            self.destroy()
-        except ValueError:
-            showerror("Error", "Please enter valid integers.")
+        # Sets the title and geometry, with the window appearing at the center of the screen
+        self.title('Tiled image scrambler/unscrambler')
+        width, height = 600, 400
+        screen_width, screen_height = self.winfo_screenwidth(), self.winfo_screenheight()
+        self.geometry(f'{width}x{height}+{int(screen_width/2 - width/2)}+{int(screen_height/2 - height/2)}')
 
+        # Creates the top menu and linking the upload button to the file selection
+        self.top_menu = TopMenu(self)
+        self.top_menu.pack(padx=10, pady=10, fill="x")
+        self.top_menu.upload_button.configure(command=self.select_file)
 
-class UploadButton(ttk.Frame):
-    def __init__(self, container):
-        super().__init__(container)
+        # Creates the frame that will contain the image
+        self.image_ratio = 0
+        self.image_frame = ctk.CTkFrame(self)
+        self.image_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        self.image_frame.bind("<Configure>", self.on_window_resize)
 
-        self.container = container
-        self.upload_icon = ImageTk.PhotoImage(Image.open('./assets/upload_image_small.jpg'))
-        self.filepath = ''
+        # Empty label that will contain the starting image
+        self.image_label = ctk.CTkLabel(self.image_frame, text="")
+        self.image_label.pack(fill="both", expand=True)
 
-        upload_button = ttk.Button(
-            self, 
-            image=self.upload_icon, 
-            text='Upload', 
-            compound=tk.LEFT, 
-            command=self.select_file
-        )
-        upload_button.pack(expand=True)
+        self.mainloop()
 
 
     def select_file(self):
+        """
+        Open the file explorer looking for a png or jpg file.
+        """
         filetypes = [
             ('PNG or JPG files', '.png'),
             ('PNG or JPG files', '.jpg')
@@ -62,66 +51,43 @@ class UploadButton(ttk.Frame):
             filetypes=filetypes
         )
 
+        # If an image was selected, we display the image
         if self.filepath != '':
-            self.container.get_tiled_image(self.filepath)
-
-
-class App(tk.Tk):
-    def __init__(self):
-        super().__init__()
-
-        self.title('Tiled image scrambler/unscrambler')
-        width, height = 600, 400
-        screen_width, screen_height = self.winfo_screenwidth(), self.winfo_screenheight()
-        self.geometry(f'{width}x{height}+{int(screen_width/2 - width/2)}+{int(screen_height/2 - height/2)}')
-
-        self.upload_button = UploadButton(self)
-        self.upload_button.grid(row=0, column=0, columnspan=2)
-
-        self.image_label = ttk.Label(self, padding=5)
-        self.image_label.grid(row=4, column=0)
-
-    def get_tiled_image(self, filepath):
-        self.filepath = filepath
-
-        self.label_rows = tk.Label(self, text='Enter the number of rows:')
-        self.label_rows.grid(row=1, column=0)
-
-        self.label_column = tk.Label(self, text='Enter the number of columns:')
-        self.label_column.grid(row=1, column=1)
-
-        self.input_row = tk.Entry(self)
-        self.input_row.grid(row=2, column=0)
-
-        self.input_column = tk.Entry(self)
-        self.input_column.grid(row=2, column=1)
-
-        self.submit_button = tk.Button(self, text='Submit', command=self.validate_inputs)
-        self.submit_button.grid(row=3, column=0, columnspan=2)
-
+            self.original_image = Image.open(self.filepath)
+            self.image = ctk.CTkImage(light_image=self.original_image, size=self.original_image.size)
+            self.image_ratio = self.original_image.width / self.original_image.height
+            self.image_label.configure(image=self.image)
+            self.resize_image(self.image_frame.winfo_width(), self.image_frame.winfo_height())
+            self.top_menu.show_split_selection()
+        
     
-    def validate_inputs(self):
-        try:
-            rows = int(self.input_row.get())
-            columns = int(self.input_column.get())
+    def resize_image(self, frame_width: int, frame_height: int):
+        """
+        Resizes the image and keeping the ratio depending on the frame's size.
+        """
+        # Avoiding the resize of the image if we don't have an image yet
+        if not self.image_ratio:
+            return
+        
+        frame_ratio = frame_width / frame_height
 
-            if rows <= 0 or columns <= 0:
-                raise ValueError
-            
-            else:
-                showinfo('Success', f'Size of the tiles: {rows}x{columns}')
-                self.display_image(filepath=self.filepath)
+        # If the frame is wider than the image
+        if frame_ratio > self.image_ratio:
+            new_height = frame_height
+            new_width = int(new_height * self.image_ratio)
+        else:
+            new_width = frame_width
+            new_height = int(new_width / self.image_ratio)
+        
+        self.image.configure(size=(new_width, new_height))
 
-        except ValueError:
-            showerror('Error', 'Please enter valid inputs')
 
-
-    def display_image(self, filepath):
-        self.image = ImageTk.PhotoImage(Image.open(filepath))
-        self.image_label.configure(image=self.image)
-
+    def on_window_resize(self, event: tk.Event):
+        """
+        Triggers whenever the window is resized.
+        """
+        self.resize_image(event.width, event.height)
 
 
 if __name__ == '__main__':
-    app = App()
-    app.mainloop()
+    App()
