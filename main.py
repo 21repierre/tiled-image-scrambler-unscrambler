@@ -12,11 +12,19 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # Sets the title and geometry, with the window appearing at the center of the screen
+        # Sets the title and geometry, get the scaling of the window
         self.title('Tiled image scrambler/unscrambler')
         width, height = 600, 400
-        screen_width, screen_height = self.winfo_screenwidth(), self.winfo_screenheight()
-        self.geometry(f'{width}x{height}+{int(screen_width/2 - width/2)}+{int(screen_height/2 - height/2)}')
+        self.window_scaling = self._get_window_scaling()
+
+        # Calculates the positions depending on the windows' size and scaling
+        screen_width = self.winfo_screenwidth() 
+        screen_height = self.winfo_screenheight()
+
+        pos_x = int((screen_width/2 - width/2) * self.window_scaling)
+        pos_y = int((screen_height/2 - height/2) * self.window_scaling)
+
+        self.geometry(f'{width}x{height}+{pos_x}+{pos_y}')
 
         # Creates the top menu and linking the upload button to the file selection
         self.top_menu = TopMenu(self)
@@ -30,8 +38,9 @@ class App(ctk.CTk):
         self.image_frame.bind("<Configure>", self.on_window_resize)
 
         # Empty label that will contain the starting image
+        self.image_padding = 10
         self.image_label = ctk.CTkLabel(self.image_frame, text="")
-        self.image_label.pack(fill="both", expand=True)
+        self.image_label.pack(fill="both", expand=True, padx=self.image_padding, pady=self.image_padding)
 
         self.mainloop()
 
@@ -71,7 +80,8 @@ class App(ctk.CTk):
         
         frame_ratio = frame_width / frame_height
 
-        # If the frame is wider than the image
+        # Calculates the new dimensions of the image, using the image's ratio
+        # depending on if the frame is wider or taller than the image
         if frame_ratio > self.image_ratio:
             new_height = frame_height
             new_width = int(new_height * self.image_ratio)
@@ -79,6 +89,9 @@ class App(ctk.CTk):
             new_width = frame_width
             new_height = int(new_width / self.image_ratio)
         
+        # Taking consideration of the scaling and padding
+        new_width = int(new_width / self.window_scaling) - (2 * self.image_padding)
+        new_height = int(new_height / self.window_scaling) - (2 * self.image_padding)
         self.image.configure(size=(new_width, new_height))
 
 
