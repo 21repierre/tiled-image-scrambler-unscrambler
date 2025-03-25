@@ -2,7 +2,15 @@ import tkinter as tk
 import customtkinter as ctk
 from PIL import Image, ImageTk
 from widgets.top_menu import TopMenu
+from widgets.split_window import SplitWindow
 from tkinter import filedialog as fd
+import pywinstyles
+
+
+class BlackBackground(ctk.CTkFrame):
+    def __init__(self, master):
+        super().__init__(master, width=200, height=100, fg_color="transparent", bg_color="transparent", corner_radius=0)
+        pywinstyles.set_opacity(self, 0.7)
 
 
 class App(ctk.CTk):
@@ -30,6 +38,8 @@ class App(ctk.CTk):
         self.top_menu = TopMenu(self)
         self.top_menu.pack(padx=10, pady=10, fill="x")
         self.top_menu.upload_button.configure(command=self.select_file)
+        self.top_menu.split_button.configure(command=self.show_split_window)
+
 
         # Creates the frame that will contain the image
         self.image_ratio = 0
@@ -100,6 +110,17 @@ class App(ctk.CTk):
         Triggers whenever the window is resized.
         """
         self.resize_image(event.width, event.height)
+    
+
+    def show_split_window(self):
+        """
+        Shows the split window when the split button is clicked.
+        """
+        self.black_background = BlackBackground(self)
+        self.black_background.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+        self.split_window = SplitWindow(self)
+        self.split_window.place(relx=0.5, rely=0.5, anchor="center")
 
 
 if __name__ == '__main__':

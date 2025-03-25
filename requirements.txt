@@ -2,3 +2,4 @@ split-image
 scikit-image
 numpy
 customtkinter
+pywinstyles
