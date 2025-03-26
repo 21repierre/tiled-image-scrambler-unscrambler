@@ -1,16 +1,10 @@
 import tkinter as tk
 import customtkinter as ctk
-from PIL import Image, ImageTk
+from PIL import Image
 from widgets.top_menu import TopMenu
 from widgets.split_window import SplitWindow
+from widgets.black_background import BlackBackground
 from tkinter import filedialog as fd
-import pywinstyles
-
-
-class BlackBackground(ctk.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master, width=200, height=100, fg_color="transparent", bg_color="transparent", corner_radius=0)
-        pywinstyles.set_opacity(self, 0.7)
 
 
 class App(ctk.CTk):
@@ -22,7 +16,7 @@ class App(ctk.CTk):
 
         # Sets the title and geometry, get the scaling of the window
         self.title('Tiled image scrambler/unscrambler')
-        width, height = 600, 400
+        width, height = 1200, 800
         self.window_scaling = self._get_window_scaling()
 
         # Calculates the positions depending on the windows' size and scaling
@@ -59,27 +53,24 @@ class App(ctk.CTk):
         """
         Open the file explorer looking for a png or jpg file.
         """
-        filetypes = [
-            ('PNG or JPG files', '.png'),
-            ('PNG or JPG files', '.jpg')
-        ]
-
-        self.filepath = fd.askopenfilename(
-            title='Open a PNG or JPG file',
-            initialdir='./',
-            filetypes=filetypes
-        )
+        filetypes = [('PNG or JPG files', '.png'), ('PNG or JPG files', '.jpg')]
+        self.filepath = fd.askopenfilename(title='Open a PNG or JPG file', initialdir='./', filetypes=filetypes)
 
         # If an image was selected, we display the image
         if self.filepath != '':
+            # Creates the image from the path
             self.original_image = Image.open(self.filepath)
             self.image = ctk.CTkImage(light_image=self.original_image, size=self.original_image.size)
+
+            # Get the ratio and configure the label to display it
             self.image_ratio = self.original_image.width / self.original_image.height
             self.image_label.configure(image=self.image)
+
+            # Resize it properly and display the new available functions
             self.resize_image(self.image_frame.winfo_width(), self.image_frame.winfo_height())
             self.top_menu.show_split_selection()
-        
-    
+
+
     def resize_image(self, frame_width: int, frame_height: int):
         """
         Resizes the image and keeping the ratio depending on the frame's size.
@@ -110,7 +101,7 @@ class App(ctk.CTk):
         Triggers whenever the window is resized.
         """
         self.resize_image(event.width, event.height)
-    
+
 
     def show_split_window(self):
         """
@@ -118,9 +109,27 @@ class App(ctk.CTk):
         """
         self.black_background = BlackBackground(self)
         self.black_background.place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.black_background.connect_background_click(self.hide_split_button)
 
         self.split_window = SplitWindow(self)
-        self.split_window.place(relx=0.5, rely=0.5, anchor="center")
+        self.split_window.place(relx=0.5, rely=0.5, relwidth=0.25, relheight=0.5, anchor="center")
+        self.split_window.connect_start_split(self.on_split_image)
+    
+
+    def hide_split_button(self):
+        """
+        Hides the split window.
+        """
+        self.black_background.place_forget()
+        self.split_window.place_forget()
+    
+
+    def on_split_image(self, rows: int, columns: int):
+        """
+        Split the image.
+        """
+        self.hide_split_button()
+        print(f"Splitting image with {rows} rows and {columns} columns")
 
 
 if __name__ == '__main__':
