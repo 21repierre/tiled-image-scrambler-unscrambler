@@ -1,10 +1,14 @@
 import tkinter as tk
 import customtkinter as ctk
 from PIL import Image
+import os
+import shutil
 from widgets.top_menu import TopMenu
 from widgets.split_window import SplitWindow
 from widgets.black_background import BlackBackground
+from widgets.tile import Tile
 from tkinter import filedialog as fd
+from split_image import split_image, reverse_split
 
 
 class App(ctk.CTk):
@@ -39,10 +43,15 @@ class App(ctk.CTk):
         self.image_ratio = 0
         self.image_frame = ctk.CTkFrame(self)
         self.image_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        self.image_frame.bind("<Configure>", self.on_window_resize)
+        self.image_frame.bind("<Configure>", self.on_frame_resize)
 
         # Empty label that will contain the starting image
         self.image_padding = 10
+
+        self.tile_frame = ctk.CTkFrame(self.image_frame)
+        self.tile_frame.place(relx=0.5, rely=0.5, anchor="center")
+        self.tiles: list[Tile] = []
+        
         self.image_label = ctk.CTkLabel(self.image_frame, text="")
         self.image_label.pack(fill="both", expand=True, padx=self.image_padding, pady=self.image_padding)
 
@@ -58,6 +67,10 @@ class App(ctk.CTk):
 
         # If an image was selected, we display the image
         if self.filepath != '':
+            if len(self.tiles):
+                self.remove_tiles()
+                self.image_label.pack(fill="both", expand=True, padx=self.image_padding, pady=self.image_padding)
+
             # Creates the image from the path
             self.original_image = Image.open(self.filepath)
             self.image = ctk.CTkImage(light_image=self.original_image, size=self.original_image.size)
@@ -73,17 +86,17 @@ class App(ctk.CTk):
 
     def resize_image(self, frame_width: int, frame_height: int):
         """
-        Resizes the image and keeping the ratio depending on the frame's size.
+        Resizes the image or the button frame and keeping the ratio depending on the frame's size.
         """
         # Avoiding the resize of the image if we don't have an image yet
         if not self.image_ratio:
             return
         
-        frame_ratio = frame_width / frame_height
+        parent_frame_ratio = frame_width / frame_height
 
-        # Calculates the new dimensions of the image, using the image's ratio
+        # Calculates the new dimensions of the image/frame, using the image's ratio
         # depending on if the frame is wider or taller than the image
-        if frame_ratio > self.image_ratio:
+        if parent_frame_ratio > self.image_ratio:
             new_height = frame_height
             new_width = int(new_height * self.image_ratio)
         else:
@@ -94,11 +107,16 @@ class App(ctk.CTk):
         new_width = int(new_width / self.window_scaling) - (2 * self.image_padding)
         new_height = int(new_height / self.window_scaling) - (2 * self.image_padding)
         self.image.configure(size=(new_width, new_height))
+        self.tile_frame.configure(width=new_width, height=new_height)
+
+        if len(self.tiles):
+            for tile in self.tiles:
+                tile.resize(new_width, new_height)
 
 
-    def on_window_resize(self, event: tk.Event):
+    def on_frame_resize(self, event: tk.Event):
         """
-        Triggers whenever the window is resized.
+        Triggers whenever the frame is resized.
         """
         self.resize_image(event.width, event.height)
 
@@ -107,16 +125,18 @@ class App(ctk.CTk):
         """
         Shows the split window when the split button is clicked.
         """
+        # Creates the black background
         self.black_background = BlackBackground(self)
         self.black_background.place(relx=0, rely=0, relwidth=1, relheight=1)
-        self.black_background.connect_background_click(self.hide_split_button)
+        self.black_background.connect_background_click(self.hide_split_window)
 
+        # Creates the split window and place it at the center
         self.split_window = SplitWindow(self)
         self.split_window.place(relx=0.5, rely=0.5, relwidth=0.25, relheight=0.5, anchor="center")
         self.split_window.connect_start_split(self.on_split_image)
     
 
-    def hide_split_button(self):
+    def hide_split_window(self):
         """
         Hides the split window.
         """
@@ -128,8 +148,54 @@ class App(ctk.CTk):
         """
         Split the image.
         """
-        self.hide_split_button()
-        print(f"Splitting image with {rows} rows and {columns} columns")
+        self.hide_split_window()
+        self.top_menu.show_save_button()
+
+        # Removes all tiles if necessary
+        if len(self.tiles):
+            self.remove_tiles()
+
+        # Empty the "tiles" folder and make sure it exists
+        directory = "tiles"
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+        os.makedirs(directory)
+
+        # Splits the image
+        split_image(image_path=self.filepath, rows=rows, cols=columns, should_square=False, should_cleanup=False, should_quiet=True, output_dir=directory)
+
+        # Remove the image and configure the grid to place the tiles
+        self.image_label.pack_forget()
+        self.tile_frame.grid_rowconfigure(list(range(rows)), weight=1, uniform="image-frame")
+        self.tile_frame.grid_columnconfigure(list(range(columns)), weight=1, uniform="image-frame")
+
+        filename = self.filepath.split("/")[-1]
+        file = "".join(filename.split(".")[:-1])
+        extension = filename.split(".")[-1]
+
+        Tile.rows = rows
+        Tile.columns = columns
+
+        for row in range(rows):
+            for col in range(columns):
+                path = f"{directory}/{file}_{row * columns + col}.{extension}"
+                image_size = self.image._size
+                tile_size = (int(image_size[0] / columns), int(image_size[1] / rows))
+                tile_image = Image.open(path).convert("RGBA")
+                tile = Tile(self.tile_frame, width=tile_size[0], height=tile_size[1], tile_image=tile_image)
+                tile.grid(row=row, column=col, sticky="nsew", padx=0, pady=0, ipadx=0, ipady=0)
+                self.tiles.append(tile)
+    
+
+    def remove_tiles(self):
+        """
+        Removes all existing tiles
+        """
+        self.tiles = []
+        self.tile_frame.destroy()
+        self.tile_frame = ctk.CTkFrame(self.image_frame)
+        self.tile_frame.place(relx=0.5, rely=0.5, anchor="center")
+        self.resize_image(self.image_frame.winfo_width(), self.image_frame.winfo_height())
 
 
 if __name__ == '__main__':

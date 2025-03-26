@@ -22,28 +22,16 @@ class TopMenu(ctk.CTkFrame):
         # Save button to save the result
         self.save_button = ctk.CTkButton(self, text='Save', font=FONT)
 
-        # Label and entry for the rows
-        self.label_rows = ctk.CTkLabel(self, text='Rows:', font=FONT)
+        # Buttons to scramble and split the image
+        self.scramble_button = ctk.CTkButton(self, text='Scramble', font=FONT)
+        self.split_button = ctk.CTkButton(self, text='Split', font=FONT)
 
-        self.input_rows = ctk.CTkEntry(self)
-    
-        # Label and entry for the columns
-        self.label_columns = ctk.CTkLabel(self, text='Columns:', font=FONT)
-
-        self.input_columns = ctk.CTkEntry(self)
-
-        # Button to split the image
-        self.split_button = ctk.CTkButton(self, text='Split', font=FONT, command=self.show_save_button)
-    
 
     def show_split_selection(self):
         """
         Shows the button to choose how you want to split your image.
         """
-        self.label_rows.grid(row=0, column=2, padx=10, pady=10, sticky="nse")
-        self.input_rows.grid(row=0, column=3, padx=10, pady=10, sticky="nsw")
-        self.label_columns.grid(row=0, column=4, padx=10, pady=10, sticky="nse")
-        self.input_columns.grid(row=0, column=5, padx=10, pady=10, sticky="nsw")
+        self.scramble_button.grid(row=0, column=5, padx=10, pady=10, sticky="ns")
         self.split_button.grid(row=0, column=6, padx=10, pady=10, sticky="ns")
 
 
