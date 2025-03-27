@@ -40,3 +40,10 @@ class TopMenu(ctk.CTkFrame):
         Shows the save button once you've splitted the image.
         """
         self.save_button.grid(row=0, column=1, padx=10, pady=10, sticky="ns")
+    
+
+    def hide_save_button(self):
+        """
+        hides the save button when uploading a new image.
+        """
+        self.save_button.grid_forget()

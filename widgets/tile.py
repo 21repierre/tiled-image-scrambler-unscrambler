@@ -5,17 +5,23 @@ from widgets.toast import Toast
 
 
 class Tile(ctk.CTkLabel):
+    """
+    The class representing every tile after splitting the image.
+    """
     rows = 0
     columns = 0
 
     def __init__(self, master: ctk.CTkFrame, width: int, height: int, tile_image: Image):
+        """
+        Creates the image and setup the label, binds the button to selection and rotation.
+        """
         self.width = width
         self.height = height
         self.original_tile_image = tile_image
         self.tile_image = ctk.CTkImage(light_image=tile_image, size=(width, height))
         super().__init__(master, width, height, image=self.tile_image, corner_radius=0, text="")
         self.bind("<Button-1>", self.select_tile)
-        self.bind("<Button-3>", self.rotate_cell)
+        self.bind("<Button-3>", self.on_right_click)
     
 
     def resize(self, frame_width: int, frame_height: int):
@@ -25,29 +31,37 @@ class Tile(ctk.CTkLabel):
         self.tile_image.configure(size=(int(frame_width/self.columns), int(frame_height/self.rows)))
     
 
-    def rotate_cell(self, _: tk.Event):
+    def on_right_click(self, _: tk.Event):
         """
-        Rotates the cell 90 degrees if the cell is perfectly square.
-        """        
+        Rotates the cell on right click.
+        """
         if self.width == self.height:
-            self.original_tile_image = self.original_tile_image.rotate(-90)
+            self.rotate_cell(-90)
         else:
-            self.original_tile_image = self.original_tile_image.rotate(180)
+            self.rotate_cell(180)
+    
 
+    def rotate_cell(self, degrees: int):
+        """
+        Rotates the cell by the amuont of degrees given.
+        """        
+        self.original_tile_image = self.original_tile_image.rotate(degrees)
         self.tile_image.configure(light_image=self.original_tile_image)
     
 
-    def select_tile(self, _: tk.Event):
+    def select_tile(self, _: tk.Event = None):
         """
         Selects the cell by making the image transparent and switching two cells if two are selected.
         """
         if self in TileSwitcher.selected_tiles:
             self.unselect_tile()
             return
-            
+        
+        # Changes the opacity of the image
         self.original_tile_image.putalpha(100)
         self.tile_image.configure(light_image=self.original_tile_image)
 
+        # Selects the tile and and switch tiles if two are selected
         TileSwitcher.selected_tiles.append(self)
 
         if len(TileSwitcher.selected_tiles) == 2:
@@ -65,6 +79,9 @@ class Tile(ctk.CTkLabel):
 
 
 class TileSwitcher():
+    """
+    Seperated class to keep track of selection and switching.
+    """
     selected_tiles: list[Tile] = []
 
     @staticmethod

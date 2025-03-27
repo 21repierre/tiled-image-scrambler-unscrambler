@@ -3,4 +3,3 @@ scikit-image
 numpy
 customtkinter
 pywinstyles
-ttkbootstrap
