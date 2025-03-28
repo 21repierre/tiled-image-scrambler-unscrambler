@@ -10,7 +10,7 @@ This project was originally made after being taunt by the meme used in FCSC 2024
 
 ![](./readme_images/puzzle-trouble-meme.jpg)
 
-The app might have a few bugs, this is my first project using tkinter.
+The app might have a few bugs, this is my first project using tkinter. To start the app, install the requirements (`pip install -r requirements.txt`) and then launch the file `main.py`.
 
 There's one known bug I couldn't solve when rotating the tiles:
 
