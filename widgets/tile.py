@@ -28,7 +28,10 @@ class Tile(ctk.CTkLabel):
         """
         Resizes the cell depending on the frame.
         """
-        self.tile_image.configure(size=(int(frame_width/self.columns), int(frame_height/self.rows)))
+        self.width = int(frame_width/self.columns)
+        self.height = int(frame_height/self.rows)
+        self.tile_image.configure(size=(self.width, self.height))
+        self.configure(width=self.width, height=self.height)
     
 
     def on_right_click(self, _: tk.Event):

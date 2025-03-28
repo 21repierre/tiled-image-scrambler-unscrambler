@@ -12,7 +12,7 @@ class Toast(ctk.CTkToplevel):
             font_title: tuple = ("Inter", 14, "bold"), 
             message: str = "", 
             font_message: tuple = ("Inter", 12, "bold"), 
-            duration: int = 3000
+            duration: int = 3000,
         ):
         """
         Creates the toast, then fade it in and out.
@@ -20,13 +20,13 @@ class Toast(ctk.CTkToplevel):
         super().__init__(parent, fg_color="#495057")
 
         # Size of the toast
-        width, height = 200, 100
         self.window_scaling = self._get_window_scaling()
+        width, height = int(200 * self.window_scaling), int(100 * self.window_scaling)
+        padx, pady = int(20 * self.window_scaling), int(60 * self.window_scaling)
 
         # Creates the position where it will appear
-        screen_width = int(self.winfo_screenwidth() * self.window_scaling)
-        pos_x = parent.winfo_width() + parent.winfo_x() - width - 20
-        pos_y = parent.winfo_y() + 60
+        pos_x = parent.winfo_x() + parent.winfo_width() - int(width * self.window_scaling) - padx
+        pos_y = parent.winfo_y() + pady
 
         # Sets the geometry and remove the window's border
         self.geometry(f'{width}x{height}+{pos_x}+{pos_y}')

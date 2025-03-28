@@ -85,7 +85,7 @@ class App(ctk.CTk):
             self.image = ctk.CTkImage(light_image=self.original_image, size=self.original_image.size)
 
             # Get the ratio and configure the label to display it
-            self.image_ratio = self.original_image.width / self.original_image.height
+            self.image_ratio = round(self.original_image.width / self.original_image.height, 5)
             self.image_label.configure(image=self.image)
 
             # Resize it properly and display the new available functions
@@ -100,21 +100,27 @@ class App(ctk.CTk):
         # Avoiding the resize of the image if we don't have an image yet
         if not self.image_ratio:
             return
-        
+                
         parent_frame_ratio = frame_width / frame_height
 
         # Calculates the new dimensions of the image/frame, using the image's ratio
         # depending on if the frame is wider or taller than the image
         if parent_frame_ratio > self.image_ratio:
-            new_height = frame_height
-            new_width = int(new_height * self.image_ratio)
+            new_height = (frame_height / self.window_scaling) - (2 * self.image_padding)
+            new_width = new_height * self.image_ratio
+            new_height_no_scaling = frame_height - (2 * self.image_padding)
+            new_width_no_scaling = new_height * self.image_ratio
         else:
-            new_width = frame_width
-            new_height = int(new_width / self.image_ratio)
+            new_width = (frame_width / self.window_scaling) - (2 * self.image_padding)
+            new_height = new_width / self.image_ratio
+            new_width_no_scaling = frame_width - (2 * self.image_padding)
+            new_height_no_scaling = new_width / self.image_ratio
         
-        # Taking consideration of the scaling and padding
-        new_width = int(new_width / self.window_scaling) - (2 * self.image_padding)
-        new_height = int(new_height / self.window_scaling) - (2 * self.image_padding)
+        new_height = int(new_height)
+        new_width = int(new_width)
+        new_height_no_scaling = int(new_height_no_scaling)
+        new_width_no_scaling = int(new_width_no_scaling)
+
         self.image.configure(size=(new_width, new_height))
         self.tile_frame.configure(width=new_width, height=new_height)
 
@@ -216,11 +222,12 @@ class App(ctk.CTk):
         Tile.columns = columns
 
         # Creates the tiles
+        image_size = self.image._size
+        tile_size = (int(image_size[0] / columns), int(image_size[1] / rows))
+
         for row in range(rows):
             for col in range(columns):
                 path = f"{directory}/{file}_{row * columns + col}.{extension}"
-                image_size = self.image._size
-                tile_size = (int(image_size[0] / columns), int(image_size[1] / rows))
                 tile_image = Image.open(path).convert("RGBA")
                 tile = Tile(self.tile_frame, width=tile_size[0], height=tile_size[1], tile_image=tile_image)
                 tile.grid(row=row, column=col, sticky="nsew", padx=0, pady=0, ipadx=0, ipady=0)
