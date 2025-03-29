@@ -6,6 +6,8 @@ Little application made with tkinter used to split and switch the tiles of an im
 
 Switch two tiles with left click, and rotate the tile with right click.
 
+You can also use WASD (ZQSD on AZERTY) to move the entire image, with QE (AE on AZERTY) to rotate the entire image.
+
 This project was originally made after being taunt by the meme used in FCSC 2024 with the challenge "Puzzle Trouble hard":
 
 ![](./readme_images/puzzle-trouble-meme.jpg)

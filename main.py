@@ -8,7 +8,7 @@ from widgets.top_menu import TopMenu
 from widgets.split_window import SplitWindow
 from widgets.scramble_window import ScrambleWindow
 from widgets.black_background import BlackBackground
-from widgets.tile import Tile
+from widgets.tile import Tile, TileMover, Move
 from widgets.toast import Toast
 from tkinter import filedialog as fd
 from split_image import split_image, reverse_split
@@ -22,7 +22,7 @@ class App(ctk.CTk):
         super().__init__()
 
         # Sets the title and geometry, get the scaling of the window
-        self.title('Tiled image scrambler/unscrambler')
+        self.title("")
         width, height = 1200, 800
         self.window_scaling = self._get_window_scaling()
 
@@ -34,15 +34,21 @@ class App(ctk.CTk):
         pos_y = int((screen_height/2 - height/2) * self.window_scaling)
 
         self.geometry(f'{width}x{height}+{pos_x}+{pos_y}')
+        self.iconbitmap("empty_icon.ico")
 
-        # Creates the top menu and linking the upload button to the file selection
+        # Creates the top menu and linking the buttons to the right functions
         self.top_menu = TopMenu(self)
         self.top_menu.pack(padx=10, pady=10, fill="x")
         self.top_menu.upload_button.configure(command=self.select_file)
         self.top_menu.split_button.configure(command=self.show_split_window)
         self.top_menu.scramble_button.configure(command=self.show_scramble_window)
         self.top_menu.save_button.configure(command=self.save_result)
-
+        self.top_menu.up_button.configure(command=lambda: TileMover.move_tiles(self.tiles, Move.UP))
+        self.top_menu.down_button.configure(command=lambda: TileMover.move_tiles(self.tiles, Move.DOWN))
+        self.top_menu.right_button.configure(command=lambda: TileMover.move_tiles(self.tiles, Move.RIGHT))
+        self.top_menu.left_button.configure(command=lambda: TileMover.move_tiles(self.tiles, Move.LEFT))
+        self.top_menu.clock_button.configure(command=lambda: TileMover.rotate_tiles(self.tiles, Move.CLOCK))
+        self.top_menu.counterclock_button.configure(command=lambda: TileMover.rotate_tiles(self.tiles, Move.COUNTERCLOCK))
 
         # Creates the frame that will contain the image
         self.image_ratio = 0
@@ -60,6 +66,8 @@ class App(ctk.CTk):
         self.image_label = ctk.CTkLabel(self.image_frame, text="")
         self.image_label.pack(fill="both", expand=True, padx=self.image_padding, pady=self.image_padding)
 
+        self.bind("<Key>", self.on_key_pressed)
+
         self.mainloop()
 
 
@@ -75,7 +83,7 @@ class App(ctk.CTk):
             # If there's tiles, we have to remove them and recreate the image label on top of it
             if len(self.tiles):
                 self.remove_tiles()
-                self.top_menu.hide_save_button()
+                self.top_menu.hide_tool_buttons()
                 self.image_label.destroy()
                 self.image_label = ctk.CTkLabel(self.image_frame, text="")
                 self.image_label.pack(fill="both", expand=True, padx=self.image_padding, pady=self.image_padding)
@@ -192,7 +200,7 @@ class App(ctk.CTk):
             self.hide_scramble_window()
         else:
             self.hide_split_window()
-        self.top_menu.show_save_button()
+        self.top_menu.show_tool_buttons()
 
         # Removes all tiles if necessary
         if len(self.tiles):
@@ -307,6 +315,29 @@ class App(ctk.CTk):
             else:
                 rotation = random.randint(0, 1) * 180
             self.tiles[i].rotate_cell(rotation)
+            
+    
+    def on_key_pressed(self, event: tk.Event):
+        """
+        Moves the image depending on key pressed.
+        ZQSD AE for AZERTY, WASD QE for QWERTY.
+        """
+        if self.tiles == []:
+            return
+        
+        match event.keycode:
+            case 90: # W
+                TileMover.move_tiles(self.tiles, Move.UP)
+            case 83: # S
+                TileMover.move_tiles(self.tiles, Move.DOWN)
+            case 81: # A
+                TileMover.move_tiles(self.tiles, Move.LEFT)
+            case 68: # D
+                TileMover.move_tiles(self.tiles, Move.RIGHT)
+            case 69: # E
+                TileMover.rotate_tiles(self.tiles, Move.CLOCK)
+            case 65: # Q
+                TileMover.rotate_tiles(self.tiles, Move.COUNTERCLOCK)
 
 
 if __name__ == '__main__':

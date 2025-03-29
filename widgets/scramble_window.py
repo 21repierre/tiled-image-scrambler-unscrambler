@@ -32,7 +32,7 @@ class ScrambleWindow(ctk.CTkFrame):
 
         # Button to decide if we want to add rotations
         self.add_rotations = ctk.BooleanVar(value=False)
-        self.rotation_button = ctk.CTkSwitch(self, text="Add rotations:", variable=self.add_rotations, font=FONT)
+        self.rotation_button = ctk.CTkSwitch(self, text="Add rotations", variable=self.add_rotations, font=FONT)
         self.rotation_button.pack(expand=True, fill="both", padx=10, pady=10)
 
         # Button to split the image
